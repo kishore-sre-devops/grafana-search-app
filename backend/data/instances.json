@@ -1,0 +1,30 @@
+[
+  {
+    "name": "SMC",
+    "url": "https://oplgtm.smcindiaonline.org/",
+    "apiKey": "glsa_0iClg5jy7p5or8ClDUSsWfapQYAeRE2z_3e36afde",
+    "browserUrl": "https://oplgtm.smcindiaonline.org/",
+    "prometheusUrl": "http://10.215.33.196:9090",
+    "linuxUid": "",
+    "windowsUid": "feq43ss3cf8cgd",
+    "sqlUid": "bfcx1crbomjgga",
+    "sslUid": "",
+    "logsUid": "",
+    "prometheusDataId": "",
+    "id": "1770706202265"
+  },
+  {
+    "name": "Stoxkart",
+    "url": "https://oplgtm.stoxkart.com",
+    "apiKey": "glsa_Mg1Uhzm9Hi0cyjsmg0QFayHEiSYgvllE_50a4fd0c",
+    "browserUrl": "https://oplgtm.stoxkart.com",
+    "prometheusUrl": "http://10.111.66.120:9090",
+    "linuxUid": "STX-Linux-Server-Dashboard-IP",
+    "windowsUid": "STX-Windows-Server-Dashboard-IP",
+    "sqlUid": "SQL-Server-Monitoring-STX",
+    "sslUid": "",
+    "logsUid": "sadlil-loki-apps-dashboar",
+    "prometheusDataId": "",
+    "id": "1770707004838"
+  }
+]
