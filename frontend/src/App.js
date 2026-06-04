@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { GoogleLogin, googleLogout } from '@react-oauth/google';
+import Documentation from './Documentation';
 
 function App() {
   const [ip, setIp] = useState('');
@@ -9,7 +10,7 @@ function App() {
   const [error, setError] = useState('');
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [showSettings, setShowSettings] = useState(false);
+  const [currentView, setCurrentView] = useState('search'); // 'search', 'settings', 'documentation'
   const [activeTab, setActiveTab] = useState('sources'); // 'sources' or 'users'
   
   // Settings Data
@@ -41,11 +42,13 @@ function App() {
   };
 
   useEffect(() => {
-    if (showSettings && user?.role === 'admin') {
-      if (activeTab === 'sources') fetchInstances();
-      if (activeTab === 'users') fetchAllUsers();
+    if (currentView === 'settings' && user?.role === 'admin') {
+      fetchInstances();
     }
-  }, [showSettings, activeTab, user]);
+    if (currentView === 'users' && user?.role === 'admin') {
+      fetchAllUsers();
+    }
+  }, [currentView, user]);
 
   const fetchInstances = async () => {
     try {
@@ -95,7 +98,7 @@ function App() {
     setToken(null);
     setUser(null);
     setResults([]);
-    setShowSettings(false);
+    setCurrentView('search');
   };
 
   const handleSearch = async (e) => {
@@ -134,123 +137,160 @@ function App() {
   }
 
   return (
-    <div className="container-fluid min-vh-100 pb-5 bg-light">
-      <style>{` .card-header-accent { border-top: 4px solid #ee3124; } .text-primary { color: #004a99 !important; } .nav-pills .nav-link.active { background-color: #004a99; } .badge-smc { background-color: #ee3124; } .btn-primary { background-color: #004a99; border-color: #004a99; } `}</style>
-      <div className="container pt-4">
-        <div className="d-flex justify-content-between align-items-center mb-5 bg-white p-3 rounded shadow-sm">
-          <img src="/smc-new-logo.png" alt="Logo" onClick={() => setShowSettings(false)} style={{cursor: 'pointer', height: '45px'}} />
-          <div className="d-flex align-items-center">
-            {user.role === 'admin' && (
-              <button className={`btn ${showSettings ? 'btn-primary' : 'btn-outline-primary'} me-3 btn-sm`} onClick={() => setShowSettings(!showSettings)}>
-                {showSettings ? 'Back to Search' : 'Infrastructure Settings'}
+    <div className="d-flex min-vh-100 bg-light">
+      <style>{`
+        .sidebar { width: 260px; min-height: 100vh; background: #fff; border-right: 1px solid #e0e0e0; position: sticky; top: 0; display: flex; flex-direction: column; }
+        .sidebar-logo { padding: 1.5rem; border-bottom: 1px solid #f0f0f0; cursor: pointer; }
+        .sidebar-nav { flex: 1; padding: 1rem; }
+        .nav-item-custom { display: block; width: 100%; padding: 0.75rem 1rem; border: 0; background: transparent; text-align: left; color: #444; border-radius: 8px; margin-bottom: 0.5rem; font-weight: 500; transition: 0.2s; }
+        .nav-item-custom:hover { background: #f8f9fa; color: #004a99; }
+        .nav-item-custom.active { background: #004a99; color: #fff; }
+        .sidebar-footer { padding: 1rem; border-top: 1px solid #f0f0f0; background: #fafafa; }
+        .card-header-accent { border-top: 4px solid #ee3124; }
+        .text-primary { color: #004a99 !important; }
+        .badge-smc { background-color: #ee3124; }
+        .btn-primary { background-color: #004a99; border-color: #004a99; }
+        .main-content { flex: 1; padding: 2rem; }
+      `}</style>
+
+      {/* Sidebar */}
+      <div className="sidebar shadow-sm">
+        <div className="sidebar-logo text-center" onClick={() => setCurrentView('search')}>
+          <img src="/smc-new-logo.png" alt="Logo" style={{ height: '40px' }} />
+        </div>
+        
+        <div className="sidebar-nav">
+          <button className={`nav-item-custom ${currentView === 'search' ? 'active' : ''}`} onClick={() => setCurrentView('search')}>
+            Dashboard Search
+          </button>
+          <button className={`nav-item-custom ${currentView === 'documentation' ? 'active' : ''}`} onClick={() => setCurrentView('documentation')}>
+            Documentation
+          </button>
+          {user.role === 'admin' && (
+            <>
+              <button className={`nav-item-custom ${currentView === 'settings' ? 'active' : ''}`} onClick={() => setCurrentView('settings')}>
+                Infrastructure Settings
               </button>
-            )}
-            <div className="d-flex align-items-center me-3 text-end d-none d-sm-flex">
-               <div className="me-2"><div className="fw-bold">{user.name}</div><small className="text-muted">{user.role.toUpperCase()}</small></div>
-               <img src={user.picture} alt="User" className="rounded-circle border" style={{width: '40px'}} />
-            </div>
-            <button className="btn btn-outline-danger btn-sm px-3" onClick={handleLogout}>Logout</button>
-          </div>
+              <button className={`nav-item-custom ${currentView === 'users' ? 'active' : ''}`} onClick={() => setCurrentView('users')}>
+                User Management
+              </button>
+            </>
+          )}
         </div>
 
-        {showSettings ? (
+        <div className="sidebar-footer">
+          <div className="d-flex align-items-center mb-3">
+            <img src={user.picture} alt="User" className="rounded-circle border me-2" style={{ width: '38px' }} />
+            <div style={{ lineHeight: '1.2' }}>
+              <div className="fw-bold small">{user.name}</div>
+              <small className="text-muted" style={{ fontSize: '10px' }}>{user.role.toUpperCase()}</small>
+            </div>
+          </div>
+          <button className="btn btn-outline-danger btn-sm w-100" onClick={handleLogout}>Logout</button>
+        </div>
+      </div>
+
+      {/* Main Content Area */}
+      <div className="main-content">
+        {currentView === 'settings' ? (
           <div className="row justify-content-center">
-            <div className="col-md-11">
+            <div className="col-md-12">
               <div className="card shadow border-0 card-header-accent">
                 <div className="card-body p-4">
-                  <div className="d-flex justify-content-between align-items-center mb-4">
-                    <h4 className="fw-bold text-primary m-0">Infrastructure Settings</h4>
-                    <ul className="nav nav-pills nav-sm">
-                      <li className="nav-item"><button className={`nav-link ${activeTab === 'sources' ? 'active' : ''}`} onClick={() => setActiveTab('sources')}>Sources</button></li>
-                      <li className="nav-item"><button className={`nav-link ${activeTab === 'users' ? 'active' : ''}`} onClick={() => setActiveTab('users')}>Users</button></li>
-                    </ul>
-                  </div>
+                  <h4 className="fw-bold text-primary mb-4">Infrastructure Settings</h4>
 
-                  {activeTab === 'sources' ? (
-                    <>
-                      <form onSubmit={handleSaveInstance} className="row g-3 mb-4 bg-light p-3 rounded border">
-                        <div className="col-md-2">
-                          <label className="form-label small fw-bold">Name</label>
-                          <input name="name" className="form-control form-control-sm" placeholder="SMC Primary" defaultValue={editingInstance?.name} required />
-                        </div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">Internal URL</label>
-                          <input name="url" className="form-control form-control-sm" placeholder="http://grafana:3000" defaultValue={editingInstance?.url} required />
-                        </div>
-                        <div className="col-md-2">
-                          <label className="form-label small fw-bold">API Key</label>
-                          <input name="apiKey" className="form-control form-control-sm" type="password" placeholder="Token" defaultValue={editingInstance?.apiKey} required />
-                        </div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">Public URL</label>
-                          <input name="browserUrl" className="form-control form-control-sm" placeholder="https://grafana.com" defaultValue={editingInstance?.browserUrl} required />
-                        </div>
-                        <div className="col-md-2">
-                          <label className="form-label small fw-bold">Prometheus</label>
-                          <input name="prometheusUrl" className="form-control form-control-sm" placeholder="http://10.x.x.x:9090" defaultValue={editingInstance?.prometheusUrl} />
-                        </div>
-                        
-                        <div className="col-12 mt-3 fw-bold small text-muted">Dashboard UIDs (Leave blank to use SMC defaults)</div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">Linux Dashboard UID</label>
-                          <input name="linuxUid" className="form-control form-control-sm" placeholder="Linux Dashboard UID" defaultValue={editingInstance?.linuxUid} />
-                        </div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">Windows Dashboard UID</label>
-                          <input name="windowsUid" className="form-control form-control-sm" placeholder="Windows Dashboard UID" defaultValue={editingInstance?.windowsUid} />
-                        </div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">MSSQL Dashboard UID</label>
-                          <input name="sqlUid" className="form-control form-control-sm" placeholder="MSSQL Dashboard UID" defaultValue={editingInstance?.sqlUid} />
-                        </div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">SSL Dashboard UID</label>
-                          <input name="sslUid" className="form-control form-control-sm" placeholder="SSL Dashboard UID" defaultValue={editingInstance?.sslUid} />
-                        </div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">Logs Dashboard UID</label>
-                          <input name="logsUid" className="form-control form-control-sm" placeholder="Logs Dashboard UID" defaultValue={editingInstance?.logsUid} />
-                        </div>
-                        <div className="col-md-3">
-                          <label className="form-label small fw-bold">Prometheus Data Source ID</label>
-                          <input name="prometheusDataId" className="form-control form-control-sm" placeholder="e.g. aec838t10o16od" defaultValue={editingInstance?.prometheusDataId} />
-                        </div>
-                        
-                        <div className="col-12 mt-3"><button type="submit" className="btn btn-primary btn-sm px-4 fw-bold">{editingInstance ? 'Update Source' : 'Add Source'}</button></div>
-                      </form>
-                      <table className="table table-hover table-sm">
-                        <thead className="table-light"><tr><th>Name</th><th>Internal URL</th><th>Prometheus</th><th>Actions</th></tr></thead>
-                        <tbody>{instances.map(i => (
-                          <tr key={i.id}><td>{i.name}</td><td><small>{i.url}</small></td><td>{i.prometheusUrl ? 'Active' : '-'}</td>
-                          <td><button className="btn btn-link btn-sm" onClick={() => setEditingInstance(i)}>Edit</button></td></tr>
-                        ))}</tbody>
-                      </table>
-                    </>
-                  ) : (
-                    <table className="table table-hover table-sm">
-                      <thead className="table-light"><tr><th>User</th><th>Email</th><th>Role</th><th>Last Login</th></tr></thead>
-                      <tbody>{allUsers.map(u => (
-                        <tr key={u.email}>
-                          <td><img src={u.picture} className="rounded-circle me-2" style={{width: '24px'}} /> {u.name}</td>
-                          <td><small>{u.email}</small></td>
-                          <td>
-                            <select className="form-select form-select-sm d-inline-block w-auto" value={u.role} onChange={(e) => handleUpdateRole(u.email, e.target.value)}>
-                              <option value="user">User</option>
-                              <option value="admin">Admin</option>
-                            </select>
-                          </td>
-                          <td><small className="text-muted">{new Date(u.lastLogin).toLocaleString()}</small></td>
-                        </tr>
-                      ))}</tbody>
-                    </table>
-                  )}
+                  <form onSubmit={handleSaveInstance} className="row g-3 mb-4 bg-light p-3 rounded border">
+                    <div className="col-md-2">
+                      <label className="form-label small fw-bold">Name</label>
+                      <input name="name" className="form-control form-control-sm" placeholder="SMC Primary" defaultValue={editingInstance?.name} required />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">Internal URL</label>
+                      <input name="url" className="form-control form-control-sm" placeholder="http://grafana:3000" defaultValue={editingInstance?.url} required />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="form-label small fw-bold">API Key</label>
+                      <input name="apiKey" className="form-control form-control-sm" type="password" placeholder="Token" defaultValue={editingInstance?.apiKey} required />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">Public URL</label>
+                      <input name="browserUrl" className="form-control form-control-sm" placeholder="https://grafana.com" defaultValue={editingInstance?.browserUrl} required />
+                    </div>
+                    <div className="col-md-2">
+                      <label className="form-label small fw-bold">Prometheus</label>
+                      <input name="prometheusUrl" className="form-control form-control-sm" placeholder="http://10.x.x.x:9090" defaultValue={editingInstance?.prometheusUrl} />
+                    </div>
+                    
+                    <div className="col-12 mt-3 fw-bold small text-muted">Dashboard UIDs (Leave blank to use SMC defaults)</div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">Linux Dashboard UID</label>
+                      <input name="linuxUid" className="form-control form-control-sm" placeholder="Linux Dashboard UID" defaultValue={editingInstance?.linuxUid} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">Windows Dashboard UID</label>
+                      <input name="windowsUid" className="form-control form-control-sm" placeholder="Windows Dashboard UID" defaultValue={editingInstance?.windowsUid} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">MSSQL Dashboard UID</label>
+                      <input name="sqlUid" className="form-control form-control-sm" placeholder="MSSQL Dashboard UID" defaultValue={editingInstance?.sqlUid} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">SSL Dashboard UID</label>
+                      <input name="sslUid" className="form-control form-control-sm" placeholder="SSL Dashboard UID" defaultValue={editingInstance?.sslUid} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">Logs Dashboard UID</label>
+                      <input name="logsUid" className="form-control form-control-sm" placeholder="Logs Dashboard UID" defaultValue={editingInstance?.logsUid} />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label small fw-bold">Prometheus Data Source ID</label>
+                      <input name="prometheusDataId" className="form-control form-control-sm" placeholder="e.g. aec838t10o16od" defaultValue={editingInstance?.prometheusDataId} />
+                    </div>
+                    
+                    <div className="col-12 mt-3"><button type="submit" className="btn btn-primary btn-sm px-4 fw-bold">{editingInstance ? 'Update Source' : 'Add Source'}</button></div>
+                  </form>
+                  <table className="table table-hover table-sm">
+                    <thead className="table-light"><tr><th>Name</th><th>Internal URL</th><th>Prometheus</th><th>Actions</th></tr></thead>
+                    <tbody>{instances.map(i => (
+                      <tr key={i.id}><td>{i.name}</td><td><small>{i.url}</small></td><td>{i.prometheusUrl ? 'Active' : '-'}</td>
+                      <td><button className="btn btn-link btn-sm" onClick={() => setEditingInstance(i)}>Edit</button></td></tr>
+                    ))}</tbody>
+                  </table>
                 </div>
               </div>
             </div>
           </div>
-        ) : (
+        ) : currentView === 'users' ? (
           <div className="row justify-content-center">
-            <div className="col-md-8">
+            <div className="col-md-12">
+              <div className="card shadow border-0 card-header-accent">
+                <div className="card-body p-4">
+                  <h4 className="fw-bold text-primary mb-4">User Management</h4>
+                  <table className="table table-hover">
+                    <thead className="table-light"><tr><th>User</th><th>Email</th><th>Access Role</th><th>Last Login</th></tr></thead>
+                    <tbody>{allUsers.map(u => (
+                      <tr key={u.email} className="align-middle">
+                        <td><img src={u.picture} className="rounded-circle me-2" style={{width: '32px'}} /> {u.name}</td>
+                        <td><small>{u.email}</small></td>
+                        <td>
+                          <select className="form-select form-select-sm d-inline-block w-auto" value={u.role} onChange={(e) => handleUpdateRole(u.email, e.target.value)}>
+                            <option value="user">Read-only</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </td>
+                        <td><small className="text-muted">{new Date(u.lastLogin).toLocaleString()}</small></td>
+                      </tr>
+                    ))}</tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : currentView === 'documentation' ? (
+          <Documentation />
+        ) : (
+          <div className="row justify-content-center pt-5">
+            <div className="col-md-10">
               <div className="card shadow border-0 card-header-accent">
                 <div className="card-body p-5 text-center">
                   <h3 className="fw-bold text-primary mb-4">Global Dashboard Explorer</h3>
